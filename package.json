@@ -1,0 +1,231 @@
+{
+  "name": "lambdachecker",
+  "displayName": "Lambda Checker",
+  "publisher": "lambdachecker",
+  "description": "Submit solutions for LambdaChecker problems directly in VSCode",
+  "version": "1.0.3",
+  "license": "GPL-3.0",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onWebviewPanel:lambdachecker.webview"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lambdachecker.login",
+        "title": "Login",
+        "category": "Lambda Checker"
+      },
+      {
+        "command": "lambdachecker.logout",
+        "title": "Logout",
+        "category": "Lambda Checker"
+      },
+      {
+        "command": "lambdachecker.show-problem",
+        "title": "Show Problem",
+        "category": "Lambda Checker"
+      },
+      {
+        "command": "lambdachecker.enroll-in-contest",
+        "title": "Enroll",
+        "category": "Lambda Checker"
+      },
+      {
+        "command": "lambdachecker.create-contest",
+        "title": "Create Contest",
+        "icon": {
+          "light": "resources/icons/light/add.svg",
+          "dark": "resources/icons/dark/add.svg"
+        },
+        "category": "Lambda Checker",
+        "when": "lambdachecker.teacher"
+      },
+      {
+        "command": "lambdachecker.edit-contest",
+        "title": "Edit Contest",
+        "icon": {
+          "light": "resources/icons/light/edit.svg",
+          "dark": "resources/icons/dark/edit.svg"
+        },
+        "category": "Lambda Checker",
+        "when": "lambdachecker.teacher"
+      },
+      {
+        "command": "lambdachecker.create-problem",
+        "title": "Create Problem",
+        "icon": {
+          "light": "resources/icons/light/add.svg",
+          "dark": "resources/icons/dark/add.svg"
+        },
+        "category": "Lambda Checker",
+        "when": "lambdachecker.teacher"
+      },
+      {
+        "command": "lambdachecker.edit-problem",
+        "title": "Edit Problem",
+        "icon": {
+          "light": "resources/icons/light/edit.svg",
+          "dark": "resources/icons/dark/edit.svg"
+        },
+        "category": "Lambda Checker",
+        "when": "lambdachecker.teacher"
+      },
+      {
+        "command": "lambdachecker.refresh-contests",
+        "title": "Refresh Contests",
+        "icon": {
+          "light": "resources/icons/light/refresh.svg",
+          "dark": "resources/icons/dark/refresh.svg"
+        },
+        "category": "Lambda Checker"
+      },
+      {
+        "command": "lambdachecker.refresh-problems",
+        "title": "Refresh Problems",
+        "icon": {
+          "light": "resources/icons/light/refresh.svg",
+          "dark": "resources/icons/dark/refresh.svg"
+        },
+        "category": "Lambda Checker"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "lambdachecker.login",
+          "when": "true"
+        },
+        {
+          "command": "lambdachecker.show-problem",
+          "when": "false"
+        },
+        {
+          "command": "lambdachecker.enroll-in-contest",
+          "when": "false"
+        },
+        {
+          "command": "lambdachecker.edit-contest",
+          "when": "false"
+        },
+        {
+          "command": "lambdachecker.edit-problem",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "lambdachecker.create-contest",
+          "group": "navigation",
+          "when": "lambdachecker.teacher && view == lambdachecker.contests"
+        },
+        {
+          "command": "lambdachecker.create-problem",
+          "group": "navigation",
+          "when": "lambdachecker.teacher && view == lambdachecker.problems"
+        },
+        {
+          "command": "lambdachecker.refresh-contests",
+          "group": "navigation",
+          "when": "view == lambdachecker.contests"
+        },
+        {
+          "command": "lambdachecker.refresh-problems",
+          "group": "navigation",
+          "when": "view == lambdachecker.problems"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "lambdachecker.edit-contest",
+          "group": "inline",
+          "when": "lambdachecker.teacher && viewItem == editable-contest && view == lambdachecker.contests"
+        },
+        {
+          "command": "lambdachecker.edit-problem",
+          "group": "inline",
+          "when": "lambdachecker.teacher && viewItem == editable-problem && (view == lambdachecker.problems || view == lambdachecker.contests)"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "lambdachecker",
+          "title": "Lambda Checker",
+          "icon": "resources/lambda-checker-logo.png"
+        }
+      ]
+    },
+    "views": {
+      "lambdachecker": [
+        {
+          "id": "lambdachecker.contests",
+          "name": "Contests",
+          "visibility": "visible",
+          "contextualTitle": "Lambda Checker Contests"
+        },
+        {
+          "id": "lambdachecker.problems",
+          "name": "Problems",
+          "contextualTitle": "Lambda Checker Problems",
+          "visibility": "collapsed"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "lambdachecker.contests",
+        "contents": "[Sign in to LambdaChecker](command:lambdachecker.login)"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "LambdaChecker",
+        "properties": {
+          "lambdaChecker.submissionsFolder": {
+            "type": "string",
+            "default": "",
+            "description": "The path of the folder where submission files will be saved."
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npm run check-types && node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "build": "tsc",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --ignore-path .gitignore --write '**/*.+(js|ts|json)'",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.88.0",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "@vscode/test-cli": "^0.0.8",
+    "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.21.5",
+    "eslint": "^8.57.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "axios": "^1.9.0",
+    "form-data": "^4.0.2"
+  }
+}

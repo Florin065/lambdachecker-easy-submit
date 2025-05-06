@@ -1,0 +1,26 @@
+textarea.test-input {
+  font-size: 14px;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  resize:none;
+  box-sizing: border-box;
+  width: 100%;
+  resize: none;
+}
+
+#textarea {
+  display: block;
+  margin: 0;
+  padding: 8px;
+  border: 2px solid black;
+}
+
+pre {
+  overflow: auto;
+  max-height: 300px;
+}

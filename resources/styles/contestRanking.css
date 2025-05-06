@@ -1,0 +1,318 @@
+h1 {
+  font-size: 24px;
+}
+
+body.vscode-light {
+  color: black;
+}
+
+body.vscode-dark {
+  color: white;
+}
+
+
+span {
+  font-size: 14px;
+}
+
+.buttons {
+  padding: 0px 0px;
+}
+
+.buttons::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+button {
+  color: inherit;
+}
+
+.btn {
+  font-size: 14px;
+  padding: 8px 0px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 0px;
+
+  display: inline-block;
+  background-color: transparent;
+  color: var(--vscode-input-foreground);
+}
+
+.btn:hover {
+  color: inherit;
+}
+
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ranking-table th, .ranking-table td {
+  padding: 5px;
+  text-align: center;
+  border-bottom: 1px solid white;
+  font-size: 14px;
+}
+
+.ranking-table th {
+  vertical-align: middle;
+}
+
+.ranking-table tr:nth-child(even) {
+  background-color: var(--vscode-inlineChat-background);
+}
+
+.ranking-table tr:nth-child(odd) {
+  background-color: var(--vscode-editor-background);
+}
+
+.ranking-table tr {
+  border: none;
+  border-radius: 0px;
+}
+
+table td:first-child {
+  border-left: none;
+}
+
+table td:last-child {
+  border-right: none;
+}
+
+.bottom-btn {
+  font-size: 15px;
+  padding: 10px 25px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 3px;
+  margin-top: 14px;
+}
+
+.test-btn {
+  font-size: 14px;
+  padding: 2px 0px 2px 6px;
+  
+  border: none;
+  cursor: pointer;
+  font-weight: strong;
+  border-radius: 3px;
+  color: var(--vscode-input-foreground);
+
+  display: inline-block;
+  background-color: transparent;
+}
+
+.test-btn:hover {
+  color: inherit;
+}
+
+.test-btn-active-text {
+  text-decoration: underline;
+  text-underline-position: under;
+  text-underline-offset: 2px;
+}
+
+.button-container {
+  display: flex;
+  align-items: center;
+  padding: 3px 0px 0px;
+}
+
+.button-container-separator {
+  margin: 0px 8px 0px 8px;
+  font-size: 18px;
+  color: #333;
+}
+
+.separator {
+  margin: 0px 4px 0px px;
+  font-size: 18px;
+  color: #333;
+}
+
+.header-cell-wrapper-with-nice-border {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 20px;
+  padding-block: 0px;
+  padding-inline: 5px;
+
+  background: linear-gradient(var(--vscode-editor-background), var(--vscode-editor-background)) padding-box,
+              linear-gradient(45deg, #3149e4 0%, #8c30f5 100%) border-box;
+
+  border: 1.5px solid transparent;
+}
+
+.header-cell-wrapper {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border-radius: 20px;
+  padding-block: 9px;
+  padding-inline: 1px;
+  border: 1.5px solid transparent;
+}
+
+.grade-cell-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border: 0px solid transparent;
+}
+
+.top-layer-countdown {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.bottom-layer-countdown {
+  font-size: 12px;
+  font-weight: 300;
+}
+
+.accepted {
+  color: #0BDA51;
+  /* font-size: 14px; */
+  font-weight: 500;
+}
+.failed {
+  color: #D2042D;
+  /* font-size: 14px; */
+  font-weight: normal;
+}
+
+.contest-dates-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+  align-items: center;
+  padding: 0px 10px;
+}
+
+.meta {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.contest-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+/* --------- Start & End time  --------- */
+.clock-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 20px;
+  padding-block: 0px;
+  padding-inline: 26px;
+}
+
+.countdown-inner {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  text-align: center;
+  align-items: center;
+  padding: 3px 0px;
+}
+
+.countdown-column {
+  display: flex;
+  flex-direction: column;
+  padding-block: 4px;
+  align-items: flex-start;
+}
+
+/* -------------------------------- */
+
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1px;
+  padding: 10px;
+  border-radius: 20px;
+  /* background: linear-gradient(var(--vscode-editor-background), var(--vscode-editor-background)) padding-box,
+              linear-gradient(45deg, #3149e4 0%, #8c30f5 100%) border-box; */
+  border: 1.5px solid transparent;
+  width: fit-content;
+  margin: 20px auto 20px auto;
+}
+
+.pagination-button-active {
+  border: none;
+  border-radius: 10px;
+  /* background: linear-gradient(var(--vscode-editor-background), var(--vscode-editor-background)) padding-box,
+              linear-gradient(45deg, #3149e4 0%, #8c30f5 100%) border-box; */
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.sentinel-button {
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  padding: 3px 10px;
+}
+
+.pagination-button {
+  padding: 3px 10px;
+  border: none;
+  background-color: transparent;
+  color: var(--vscode-input-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.pagination-button:hover {
+  background-color: var(--vscode-inlineChat-background);
+  color: inherit;
+}
+
+.pagination-current {
+  padding: 5px 10px;
+  border-radius: 10px;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+svg {
+  /* stroke: var(--vscode-input-foreground); */
+  fill: var(--vscode-input-foreground);
+  vertical-align: middle;
+  width: 10px;
+  height: 10px;
+}
+
+body {
+  border-left: 3px solid #8c30f5;
+}
+
+
+.sentinel-button:disabled {
+  background-color: transparent;
+  cursor: default;
+  opacity: 0.7; /* Make disabled buttons appear grayed out */
+}

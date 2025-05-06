@@ -1,0 +1,296 @@
+:root {
+  --difficulty-easy: #28C244;
+  --difficulty-medium: #FAC31D;
+  --difficulty-hard: #F44336;
+}
+
+.header-btn {
+  font-size: 14px;
+  padding: 8px 0px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 0px;
+
+  display: inline-block;
+  background-color: transparent;
+}
+
+.all-submissions {
+  float: left;
+}
+
+.all-submissions svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 3px;
+  vertical-align: text-top;
+}
+
+.download-tests svg {
+  margin-right: 3px;
+  vertical-align: text-top;
+}
+
+.restore-skeleton svg {
+  margin-right: 3px;
+  vertical-align: text-top;
+}
+
+@media only screen and (max-width: 600px) {
+  .contest-ranking {
+    display: none !important;
+  }
+
+  .clock-wrapper {
+    display: none !important;
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .button-container {
+    display: none !important;
+  }
+
+  .labels-container-wrapper {
+    display: none !important;
+  }
+}
+
+.contest-ranking svg {
+  margin-right: 3px;
+  vertical-align: text-top;
+}
+
+
+/* .header-container {
+  display: flex;
+  align-items: center;
+} */
+
+
+.btn.edit-problem {
+  margin-left: 20px;
+}
+
+/* .edit-problem {
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-problem svg {
+  margin-left: 20px;
+  vertical-align: text-top;
+} */
+
+input.test-input {
+  font-size: 14px;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+textarea.test-input {
+  font-size: 14px;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  resize:none;
+  box-sizing: border-box;
+  width: 100%;
+  resize: none;
+}
+
+#textarea {
+  display: block;
+  margin: 0;
+  padding: 8px;
+  border: 2px solid black;
+}
+
+.hidden {
+  display: none;
+}
+
+.test-btn-example {
+  padding-right: 8px;
+}
+
+.test-btn-add svg {
+  vertical-align: text-top;
+  padding-left: 8px;
+}
+
+.test-btn-remove svg {
+  width: 10px;
+  height: 10px;
+  vertical-align: top;
+}
+
+.test-btn-remove {
+  visibility: hidden;
+  padding: 0px 0px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 3px;
+  color: var(--vscode-input-foreground);
+  background-color: transparent;
+}
+
+.test-btn:hover + .test-btn-remove, .test-btn-remove:hover {
+  visibility: visible;
+}
+
+.problem-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.button-container-wrapper {
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.contest-name-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 20px;
+  padding-block: 2px;
+  padding-inline: 20px;
+
+  background: linear-gradient(var(--vscode-editor-background), var(--vscode-editor-background)) padding-box,
+              linear-gradient(45deg, #3149e4 0%, #8c30f5 100%) border-box;
+
+  border: 1.5px solid transparent;
+}
+
+.title-wrapper {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  padding-block: 0px;
+}
+
+.labels-container-wrapper {
+  display: flex;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: normal;
+  padding: 10px 0px 0px;
+}
+
+.difficulty-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 20px;
+  padding-block: 2px;
+  padding-inline: 20px;
+
+  background: linear-gradient(var(--vscode-input-background), var(--vscode-input-background)) padding-box;
+  border: 1.5px solid transparent;
+}
+
+.easy {
+  color: var(--difficulty-easy);
+}
+
+.medium {
+  color: var(--difficulty-medium);
+}
+
+.hard {
+  color: var(--difficulty-hard);
+}
+
+.label {
+  font-size: 12px;
+}
+
+.clock-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 20px;
+  padding-block: 0px;
+  padding-inline: 26px;
+
+  background: linear-gradient(var(--vscode-editor-background), var(--vscode-editor-background)) padding-box,
+              linear-gradient(45deg, #3149e4 0%, #8c30f5 100%) border-box;
+
+  border: 1.5px solid transparent;
+}
+
+.countdown-inner {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;          /* Distance between columns */
+  text-align: center;
+  align-items: center;
+  padding: 3px 0px;
+}
+
+.countdown-column {
+  display: flex;
+  flex-direction: column;
+  padding-block: 4px;
+  align-items: center;
+  inline-size: 42px;
+}
+
+.top-layer-countdown {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.bottom-layer-countdown {
+  font-size: 12px;
+  font-weight: 300;
+}
+
+
+.upload-container {
+  position: relative;
+  width: 100%;
+}
+
+div.tests-container {
+  padding-top: 0px;
+  min-height: 0px !important;
+}
+
+div.tests-container {
+  margin-bottom: 20px !important;
+}
+
+.upload {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
