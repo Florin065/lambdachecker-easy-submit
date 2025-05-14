@@ -42,7 +42,9 @@ export function splitMergedJavaFile(filePath: string, outputDir: string): void {
         typeBlocks.push({ name: currentName, content: [...currentBlock] });
     }
 
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+    }
 
     for (const block of typeBlocks) {
         let classContent = block.content.join('\n');

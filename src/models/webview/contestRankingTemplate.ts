@@ -213,7 +213,7 @@ export const getContestRankingHTML = (
     <title>Ranking ${contestMetadata.name}</title>
     <link rel='stylesheet' type='text/css' href='${stylesUri}'>
   </head>
-    <body>
+  <body>
     <h1 class="contest-name">Ranking ${contestMetadata.name}
     <div class="clock-wrapper">
       <div class="countdown-inner">
@@ -229,6 +229,15 @@ export const getContestRankingHTML = (
       </div>
     </div>
     </h1>
+
+    <div class="search-bar-wrapper">
+      <input
+        type="text"
+        id="search-bar"
+        placeholder="Search by username..."
+        oninput="filterTable()"
+      />
+    </div>
 
     <table class="ranking-table">
         <thead>
@@ -252,12 +261,41 @@ export const getContestRankingHTML = (
       <script>
         let currentPage = ${currentPage};
         let currentSlidingWindow = [${currentSlidingWindow[0]}, ${
-    currentSlidingWindow[1]
-  }];
+          currentSlidingWindow[1]
+        }];
         let totalPages = ${totalPages};
+
+        let allRankingData = ${JSON.stringify(oldRankingData)};
+
+        function filterTable() {
+          // const searchInput = document.getElementById("search-bar").value.toLowerCase();
+          // const tableRows = document.querySelectorAll("#ranking-data tr");
+          // filter the table rows based on the search input and render the filtered rows
+          const searchInput = document.getElementById("search-bar").value.toLowerCase();
+          const tableRows = document.querySelectorAll("#ranking-data tr");
+
+
+          // Render the table rows based on the search input, without empty rows
+          let filteredRows = "";
+          let emptyRows = 0;
+          tableRows.forEach((row) => {
+            const username = row.querySelector("td:nth-child(2)").textContent.toLowerCase();
+            if (username.includes(searchInput)) {
+              filteredRows += row.outerHTML;
+            } else {
+              emptyRows++;
+            }
+          });
+          const rankingData = document.getElementById("ranking-data");
+          rankingData.innerHTML = filteredRows;
+          if (filteredRows === "") {
+            rankingData.innerHTML = "<tr><td colspan='100%'>No results found</td></tr>";
+          } else {
+            rankingData.innerHTML += "<tr><td colspan='100%'></td></tr>";
+          }
+        }
       </script>
       <script src="${scriptsUri}"></script>
-      
     </body>
   </html>
   `;

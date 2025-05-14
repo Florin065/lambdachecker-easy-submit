@@ -152,6 +152,17 @@ export class SubmissionFile {
   async openInEditor(override: boolean = false): Promise<void> {
     await this.createSubmissionFile(override);
   
+    if (override) {
+      const ext = path.extname(this.fileUri.fsPath);
+      if (ext === '.java') {
+        const fileBaseName = path.basename(this.fileUri.fsPath, ext);
+        const splitDir = path.join(path.dirname(this.fileUri.fsPath), fileBaseName);
+        if (fs.existsSync(splitDir)) {
+          fs.rmSync(splitDir, { recursive: true, force: true });
+        }
+      }
+    }
+
     await ProblemEditor.show(this);
   
     const ext = path.extname(this.fileUri.fsPath);
