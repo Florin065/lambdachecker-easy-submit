@@ -956,6 +956,15 @@ export const getProblemHTML = (
       ${getInitialTestsHTML(problemData.tests.slice(1, 4))}
     </div>
 
+    <div style="margin-top: 10px;">
+      <input
+        type="checkbox"
+        id="autoSubmitCheckbox"
+        title="Available only while the contest is active."
+      />
+      <label for="autoSubmitCheckbox">Auto-submit on last 30 seconds</label>
+    </div>
+
     <div class="buttons">
       <button id="submit" class="bottom-btn submit" onclick="send('submit')">Submit</button>
       <button id="run" class="bottom-btn run" onclick="run()">Run</button>
@@ -967,10 +976,60 @@ export const getProblemHTML = (
       const contestEndDate = new Date("${contestMetadata?.end_date}");
       const contestId = ${contestMetadata?.id};
 
+      console.log("Contest end date:", contestEndDate);  // DEBUG
+      
       vscode.setState(${JSON.stringify({
         problem: problemData,
         contestMetadata: contestMetadata,
       })});
+
+      const checkbox = document.getElementById('autoSubmitCheckbox');
+
+      // Trigger auto-submit 30 seconds before contest end
+      function setupAutoSubmitTimer() {
+        if (!contestEndDate || isNaN(contestEndDate.getTime())) return;
+
+        const now = new Date();
+        const msUntilTrigger = contestEndDate.getTime() - now.getTime() - 30 * 1000;
+        if (msUntilTrigger <= 0) return; // Contest already ended or less than 30s left
+
+        setTimeout(() => {
+          const autoSubmit = localStorage.getItem('autoSubmit') === 'true';
+          if (autoSubmit && checkbox && checkbox.checked) {
+            vscode.postMessage({
+              action: 'submit',
+              contestId: contestId,
+            });
+          }
+        }, msUntilTrigger);
+      }
+
+      setupAutoSubmitTimer();
+
+      const now = new Date();
+      const isContestActive = contestEndDate && now < contestEndDate;
+
+      if (checkbox) {
+        if (!isContestActive) {
+          checkbox.disabled = true;
+          checkbox.checked = false;
+          localStorage.removeItem('autoSubmit');
+        } else {
+          checkbox.checked = localStorage.getItem('autoSubmit') === 'true';
+
+          checkbox.addEventListener('change', () => {
+            console.log('AutoSubmit changed:', checkbox.checked);  // DEBUG
+            localStorage.setItem('autoSubmit', checkbox.checked);
+            vscode.postMessage({
+              action: 'auto-submit-toggle',
+              problemId: ${problemData.id},
+              value: checkbox.checked,
+            });
+          });
+        }
+      } else {
+        console.error("Checkbox not found");  // DEBUG
+      }
 
       function send(cmd) {
         vscode.postMessage({

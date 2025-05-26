@@ -99,6 +99,11 @@ export const getProblemWebviewContent = (
     <h3>Output:</h3>
     <pre>${problemData.example.output}</pre>
 
+    <div style="margin-top: 10px;">
+      <input type="checkbox" id="autoSubmitCheckbox" />
+      <label for="autoSubmitCheckbox">Trimite automat la finalul concursului</label>
+    </div>
+
     <div class="buttons">
       <button id="submit" class="btn submit" onclick="send('submit')">Submit</button>
       <button id="run" class="btn run" onclick="send('run')">Run</button>
@@ -109,6 +114,19 @@ export const getProblemWebviewContent = (
       const vscode = acquireVsCodeApi();
 
       vscode.setState(${JSON.stringify(problemData)});
+
+      const checkbox = document.getElementById('autoSubmitCheckbox');
+
+      if (checkbox) {
+        checkbox.checked = localStorage.getItem('autoSubmit') === 'true';
+
+        checkbox.addEventListener('change', () => {
+          console.log('AutoSubmit changed:', checkbox.checked);  // DEBUG
+          localStorage.setItem('autoSubmit', checkbox.checked);
+        });
+      } else {
+        console.error("Checkbox-ul 'autoSubmitCheckbox' nu a fost găsit.");
+      }
 
       function send(cmd) {
         vscode.postMessage({
