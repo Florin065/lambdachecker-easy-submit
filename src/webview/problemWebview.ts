@@ -1,4 +1,4 @@
-import path from "path";
+import * as path from "path";
 import * as vscode from "vscode";
 import { LambdaChecker } from "../commands";
 import {
@@ -31,6 +31,53 @@ export class ProblemWebview {
       problem.language,
       problem.skeleton?.code || ""
     );
+  }
+
+  private async createRepository() {
+    // 1. Accesează API-ul Git inclus în VS Code
+    const gitExtension = vscode.extensions.getExtension("vscode.git")?.exports;
+    const git        = gitExtension?.getAPI(1);
+    if (!git) {
+      vscode.window.showErrorMessage("Git extension indisponibil.");
+      return;
+    }
+
+    // 2. Creeaza un subdirectoriu pentru problemă folosind ID-ul problemei + repo
+    const submissionsFolderPath = SubmissionFile.getSubmissionsFolderPath();
+    // adauga Repo la numele folderului
+    const problemFolderName = `${this.problem.id}_${this.problem.name
+      .trim()
+      .replaceAll(" ", "_")}_repo`;
+    const repoUri = vscode.Uri.file(
+      path.join(submissionsFolderPath, problemFolderName)
+    );
+
+    try {
+      await vscode.workspace.fs.createDirectory(repoUri);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Eroare la crearea directorului: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return;
+    }
+
+    // 2.5 Verifică dacă există deja un repository Git în acel director
+    const gitRepositories = git.repositories.filter(
+      (repo: { rootUri: { fsPath: string; }; }) => repo.rootUri.fsPath === repoUri.fsPath
+    );
+    if (gitRepositories.length > 0) {
+      vscode.window.showErrorMessage(
+        `Un repository Git există deja în ${problemFolderName}. Alege un alt nume sau șterge-l.`,
+      );
+      return;
+    }
+
+    // 3. Inițializează un nou repository Git
+    await git.init(repoUri);
+
+    // 4. Trimite feedback catre webview
+    this.panel.webview.postMessage({
+      action: "repo-created" });
   }
 
   async waitForSubmitionProcessing(
@@ -344,6 +391,11 @@ export class ProblemWebview {
         });
 
         break;
+
+      case "create-repo":
+        await this.createRepository();
+        break;
+
     }
   }
 }

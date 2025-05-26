@@ -13,6 +13,9 @@ import {
   TestResult,
   User,
 } from "../api";
+import { SubmissionFile } from "../../storage";
+import path from "path";
+import fs from "fs";
 
 const styles = `
 <style>
@@ -191,7 +194,7 @@ const styles = `
     cursor: pointer;
     font-weight: 500;
     border-radius: 3px;
-    margin-top: 14px;
+    margin-top: 20px;
   }
 
   .test-btn {
@@ -277,6 +280,36 @@ const problemButtonsStyle = `
   transform: translateY(4px); 
 }
 
+.create-repo, .commit, .push, .pull {
+  color: black;
+  background-color: #f4f4f5;
+  margin-top: 20px;
+  margin-right: 10px;
+  border-radius: 3px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, opacity 0.1s;
+}
+
+.create-repo:hover, .commit:hover, .push:hover, .pull:hover {
+  background-color: #8c30f5;
+  color: white;
+}
+
+.create-repo:active, .commit:active, .push:active, .pull:active {
+  transform: translateY(4px);
+  opacity: 0.85;
+}
+
+.create-repo[disabled] {
+  background-color: #e0e0e0;
+  color: #888;
+  cursor: default;
+  opacity: 0.6;
+}
 </style>`;
 
 const head = `
@@ -825,6 +858,23 @@ export const getProblemHTML = (
 ) => {
   const title = `${problemData.id}. ${problemData.name}`;
 
+  const submissionsFolderPath = SubmissionFile.getSubmissionsFolderPath();
+  const problemFolderName = `${problemData.id}_${problemData.name
+    .trim()
+    .replaceAll(" ", "_")}_repo`;
+  const repoUri = vscode.Uri.file(
+    path.join(submissionsFolderPath, problemFolderName)
+  );
+  const repoUriExists = fs.existsSync(repoUri.fsPath);
+
+  console.log(
+    `Problem HTML: Submissions folder path: ${submissionsFolderPath}, Problem folder name: ${problemFolderName}, Repo URI: ${repoUri}`
+  );
+
+  console.log(
+    `Problem HTML: Repo URI exists: ${repoUriExists}`
+  );
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -969,6 +1019,22 @@ export const getProblemHTML = (
       <button id="submit" class="bottom-btn submit" onclick="send('submit')">Submit</button>
       <button id="run" class="bottom-btn run" onclick="run()">Run</button>
       <button id="code" class="bottom-btn code" onclick="send('code')">Code</button>
+    </div>
+
+    <div class="git-buttons">
+      <button
+        id="create-repo"
+        class="btn create-repo"
+        ${repoUriExists
+            ? `disabled`
+            : `onclick="send('create-repo')"` }
+        title="${repoUriExists ? "Repository already created" : "Create a new repository"}">
+        🐙 Create repo
+      </button>
+
+      <button id="commit" class="btn commit" onclick="send('commit')">💾 Commit</button>
+      <button id="push" class="btn push" onclick="send('push')">⬆️ Push</button>
+      <button id="pull" class="btn pull" onclick="send('pull')">⬇️ Pull</button>
     </div>
 
     <script>
