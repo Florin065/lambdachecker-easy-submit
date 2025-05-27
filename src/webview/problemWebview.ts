@@ -33,40 +33,24 @@ export class ProblemWebview {
     );
   }
 
-
-  /**
-   * Creează repo local + remote GitHub ("origin") pentru problema curentă.
-   * În interiorul clasei care conține `this.problem` și `this.panel`.
-   */
   private async createRepository(): Promise<void> {
-    /* ───────────────────────────────────────────────────────────────────────┐
-      1. Găsește API-ul Git
-    ──────────────────────────────────────────────────────────────────────────*/
     const gitExt = vscode.extensions.getExtension("vscode.git")?.exports;
     const git    = gitExt?.getAPI(1);
     if (!git) {
-      vscode.window.showErrorMessage("Extensia Git nu este disponibilă.");
+      vscode.window.showErrorMessage("Git extension is not available.");
       return;
     }
 
-    /* ───────────────────────────────────────────────────────────────────────┐
-      2. Construiește căile locale
-    ──────────────────────────────────────────────────────────────────────────*/
     const submissionsPath = SubmissionFile.getSubmissionsFolderPath();
     const repoDirName = `${this.problem.id}_${this.problem.name.trim().replaceAll(" ", "_")}_repo`;
     const repoUri     = vscode.Uri.file(path.join(submissionsPath, repoDirName));
 
     try {
-      /* Creează directorul dacă lipsește */
       try { await vscode.workspace.fs.stat(repoUri); }
       catch { await vscode.workspace.fs.createDirectory(repoUri); }
 
-      /* ───────────────────────────────────────────────────────────────────┐
-        3. Inițializează repo-ul local
-      ──────────────────────────────────────────────────────────────────────*/
-      await git.init(repoUri);                         // echivalent `git init`
+      await git.init(repoUri);
 
-      /* Adaugă repo-ul la extensia Git (dacă nu s-a adăugat implicit) */
       if (!git.getRepository(repoUri)) {
         if (typeof git.openRepository === "function") {
           await git.openRepository(repoUri);
@@ -75,19 +59,14 @@ export class ProblemWebview {
         }
       }
 
-      /* ───────────────────────────────────────────────────────────────┐
-        4. Creează remote „origin” pe GitHub folosind contul VS Code
-      ──────────────────────────────────────────────────────────────────*/
       try {
-        /* 4.1  Obține token GitHub (scope repo) */
         const ghSession = await vscode.authentication.getSession(
-          "github",               // provider
-          ["repo"],               // scope minim pentru repo-uri
-          { createIfNone: true }  // deschide dialog OAuth dacă e nevoie
+          "github",
+          ["repo"],
+          { createIfNone: true }
         );
         const token = ghSession.accessToken;
 
-        /* 4.2  Creează repo pe GitHub (nume = id_name) */
         const ghResp = await fetch("https://api.github.com/user/repos", {
           method: "POST",
           headers: {
@@ -101,65 +80,54 @@ export class ProblemWebview {
         });
 
         if (!ghResp.ok) {
-          throw new Error(`GitHub API a răspuns cu status ${ghResp.status}`);
+          throw new Error(`GitHub API error: ${ghResp.status} ${ghResp.statusText}`);
         }
 
-        const ghRepo = await ghResp.json() as { clone_url: string; ssh_url?: string; [key: string]: any }; // clone_url, ssh_url etc.
+        const ghRepo = await ghResp.json() as { clone_url: string; ssh_url?: string; [key: string]: any };
 
-        /* 4.3  Înregistrează remote-ul în repo-ul local */
         const repo = git.getRepository(repoUri)!;
         await repo.addRemote("origin", ghRepo.clone_url);
 
-        vscode.window.showInformationMessage(`Remote „origin” creat pe GitHub: ${ghRepo.clone_url}`);
+        vscode.window.showInformationMessage(`Remote „origin” created at ${ghRepo.clone_url}`);
       } catch (remoteErr) {
         vscode.window.showWarningMessage(
-          `Repo local creat, dar remote-ul GitHub NU a fost adăugat: ${(remoteErr as Error).message}`
+          `Local repository created, but failed to create remote on GitHub: ${(remoteErr as Error).message}`
         );
       }
 
-      /* ───────────────────────────────────────────────────────────────┐
-        5. Trimite feedback către web-view
-      ──────────────────────────────────────────────────────────────────*/
       this.panel.webview.postMessage({ action: "repo-created" });
-      vscode.window.showInformationMessage(`Repository local „${repoDirName}” a fost creat cu succes.`);
+      vscode.window.showInformationMessage(`Local repository created at: ${repoUri.fsPath}`);
     }
-    /* ──────────────────────────────────────────────────────────────────────*/
     catch (err) {
       vscode.window.showErrorMessage(
-        `Eroare la crearea repository-ului: ${(err as Error).message}`
+        `Error creating repository: ${(err as Error).message}`
       );
     }
   }
 
   private async commitRepository(): Promise<void> {
-    console.log("Committing…");
-
-    /* 0. Git API ------------------------------------------------------------ */
     const gitExt = vscode.extensions.getExtension("vscode.git")?.exports;
     const git    = gitExt?.getAPI(1);
     if (!git) {
-      vscode.window.showErrorMessage("Extensia Git nu este disponibilă.");
+      vscode.window.showErrorMessage("Git extension is not available.");
       return;
     }
 
-    /* 1. Căi utile ---------------------------------------------------------- */
     const submissionsPath = SubmissionFile.getSubmissionsFolderPath();
     const baseName  = `${this.problem.id}_${this.problem.name.trim().replaceAll(" ", "_")}`;
     const repoDir   = `${baseName}_repo`;
     const repoUri   = vscode.Uri.file(path.join(submissionsPath, repoDir));
 
-    const srcFileUri  = this.submissionFile.Uri;                     // soluţia generată
+    const srcFileUri  = this.submissionFile.Uri;
     const destFileUri = vscode.Uri.joinPath(repoUri, path.basename(srcFileUri.fsPath));
 
-    /* 2. Actualizează fişierul soluţie ------------------------------------- */
     try {
-      await this.submissionFile.prepareSubmission();                 // codul tău custom
+      await this.submissionFile.prepareSubmission();
     } catch (err) {
-      vscode.window.showErrorMessage(`Eroare la pregătirea fişierului: ${(err as Error).message}`);
+      vscode.window.showErrorMessage(`Error preparing submission file: ${(err as Error).message}`);
       return;
     }
 
-    /* 3. Copiază doar dacă există diferenţe -------------------------------- */
     let copied = false;
     try {
       let shouldCopy = true;
@@ -169,23 +137,22 @@ export class ProblemWebview {
           vscode.workspace.fs.readFile(destFileUri)
         ]);
         if (Buffer.compare(srcBytes, destBytes) === 0) { shouldCopy = false; }
-      } catch { /* destFile încă nu există → îl copiem */ }
+      } catch { }
 
       if (shouldCopy) {
         await vscode.workspace.fs.copy(srcFileUri, destFileUri, { overwrite: true });
         copied = true;
       }
     } catch (err) {
-      vscode.window.showErrorMessage(`Eroare la copierea fişierului: ${(err as Error).message}`);
+      vscode.window.showErrorMessage(`Error copying file: ${(err as Error).message}`);
       return;
     }
 
     if (!copied) {
-      vscode.window.showInformationMessage("Fişier identic – nimic de comis.");
+      vscode.window.showInformationMessage("Identical file already exists in the repository.");
       return;
     }
 
-    /* 4. Deschide repo-ul dacă nu e deja cunoscut -------------------------- */
     let repo = git.getRepository(repoUri);
     if (!repo) {
       try { repo = await git.openRepository?.(repoUri); } catch {}
@@ -195,60 +162,52 @@ export class ProblemWebview {
       }
     }
     if (!repo) {
-      vscode.window.showErrorMessage("Repository-ul Git nu a putut fi deschis.");
+      vscode.window.showErrorMessage("Git repository could not be opened.");
       return;
     }
 
-    /* 5. Reîmprospătează & verifică modificările --------------------------- */
-    await repo.status();   // obliga Git API să recalculeze working tree
+    await repo.status();
 
     const dirty =
       repo.state.indexChanges.length +
       repo.state.workingTreeChanges.length +
       repo.state.mergeChanges.length > 0;
 
-    if (!dirty) {      // ar trebui să nu se întâmple, dar pentru siguranţă
-      vscode.window.showInformationMessage("Nu există modificări de comis.");
+    if (!dirty) {
+      vscode.window.showInformationMessage("No changes to commit.");
       return;
     }
 
-    /* 6. Cere mesajul de commit -------------------------------------------- */
     const commitMsg = await vscode.window.showInputBox({
       prompt: "Commit message",
-      value: `Problema ${this.problem.id} • ${new Date().toLocaleString()}`
+      value: `Problem ${this.problem.id} • ${new Date().toLocaleString()}`
     });
-    if (!commitMsg) { return; }   // utilizatorul a anulat
+    if (!commitMsg) { return; }
 
-    /* 7. Stage + commit ----------------------------------------------------- */
     try {
-      // stage-uim TOT ce e modificat
-      await repo.add([]);                       // [] = toate fişierele schimbate
+      await repo.add([]);
       await repo.commit(commitMsg, { all: true });
 
-      vscode.window.showInformationMessage(`Commit realizat cu succes în ${repoDir}.`);
+      vscode.window.showInformationMessage(`Commit successful: ${commitMsg}`);
       this.panel.webview.postMessage({ action: "commit-submitted" });
+      
     } catch (err) {
-      vscode.window.showErrorMessage(`Eroare la commit: ${(err as Error).message}`);
+      vscode.window.showErrorMessage(`Error during commit: ${(err as Error).message}`);
     }
   }
 
 private async pushRepository(): Promise<void> {
-  console.log("Pushing…");
-
-  // 0. Obţine Git API
   const gitExt = vscode.extensions.getExtension("vscode.git")?.exports;
   const git    = gitExt?.getAPI(1);
   if (!git) {
-    vscode.window.showErrorMessage("Git API nu e disponibilă.");
+    vscode.window.showErrorMessage("Git API is not available.");
     return;
   }
 
-  // 1. Calculează repoUri
-  const submissions    = SubmissionFile.getSubmissionsFolderPath();
-  const repoDir        = `${this.problem.id}_${this.problem.name.trim().replaceAll(" ", "_")}_repo`;
-  const repoUri        = vscode.Uri.file(path.join(submissions, repoDir));
+  const submissions = SubmissionFile.getSubmissionsFolderPath();
+  const repoDir     = `${this.problem.id}_${this.problem.name.trim().replaceAll(" ", "_")}_repo`;
+  const repoUri     = vscode.Uri.file(path.join(submissions, repoDir));
 
-  // 2. Deschide / recuperează repository-ul
   let repo = git.getRepository(repoUri)
           ?? await git.openRepository?.(repoUri).catch(() => undefined);
   if (!repo) {
@@ -256,91 +215,107 @@ private async pushRepository(): Promise<void> {
     repo = git.getRepository(repoUri);
   }
   if (!repo) {
-    vscode.window.showErrorMessage("Nu pot deschide repository-ul Git.");
+    vscode.window.showErrorMessage("Could not open Git repository.");
     return;
   }
 
-  // 3. Reîmprospătează status
-  await repo.fetch("origin").catch(() => {/* ignori fetch errors */});
+  await repo.fetch("origin").catch(() => {});
   await repo.status();
 
-// 4.1. Verifică dacă suntem pe un branch, altfel facem checkout + branch
-const head = repo.state.HEAD;
-if (!head?.name) {
-  const newBranch = "main";
-  try {
-    await vscode.commands.executeCommand(
-      "git.checkout",
-      { ref: head?.commit, createBranch: newBranch }
-    );
-    vscode.window.showInformationMessage(`Branch '${newBranch}' creat și selectat.`);
-  } catch (e) {
-    vscode.window.showErrorMessage(
-      `Nu am putut crea branch-ul '${newBranch}' pentru push: ${(e as Error).message}`
-    );
+  let head = repo.state.HEAD;
+  if (!head?.name) {
+    const newBranch = "main";
+    try {
+      await vscode.commands.executeCommand(
+        "git.checkout",
+        { ref: head?.commit, createBranch: newBranch }
+      );
+      head = repo.state.HEAD!;
+      vscode.window.showInformationMessage(`Created and switched to '${newBranch}'.`);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Error creating branch: ${(e as Error).message}`);
+      return;
+    }
+    await new Promise(res => setTimeout(res, 300));
+    await repo.status();
+    head = repo.state.HEAD!;
+  }
+
+  const localBranch = head.name!;
+  const isFirst     = !head.upstream;
+
+  let remoteBranch = localBranch;
+  if (isFirst) {
+    const allRefs = await (repo as any).getRefs?.() as Array<{ name: string, type: number }>;
+    const remoteHeads = allRefs
+      .filter(r => r.type === 3 && r.name.startsWith("origin/"))
+      .map(r => r.name.replace(/^origin\//, ""));
+
+    if (remoteHeads.includes(localBranch)) {
+      remoteBranch = localBranch;
+    } else if (remoteHeads.includes("master") && localBranch !== "master") {
+      const pick = await vscode.window.showQuickPick(
+        [ localBranch, "master" ],
+        { placeHolder: `Remote default branches: ${remoteHeads.join(", ")}` }
+      );
+      if (!pick) {
+        vscode.window.showInformationMessage("Push canceled.");
+        return;
+      }
+      remoteBranch = pick;
+    } else {
+      remoteBranch = localBranch;
+    }
+  }
+
+  const head2 = repo.state.HEAD!;
+  if (!isFirst && head2.ahead === 0) {
+    vscode.window.showInformationMessage("No new commits to push.");
     return;
   }
-  // mici delay ca Git API să-și reîmprospăteze HEAD
-  await new Promise(res => setTimeout(res, 300));
-}
 
-  // 5. După eventualul checkout, recalculează HEAD
-  await repo.status();
-  const finalHead = repo.state.HEAD!;
-  const branch    = finalHead.name!;
-  const isFirst   = !finalHead.upstream;
-
-  // 6. Pregăteşte refspec-ul explicit
-  const refspec = `${branch}:${branch}`;  // ex: "main:main"
-
-  // 7. „împinge” cu setUpstream la primul push
+  const refspec = `${localBranch}:${remoteBranch}`;
   try {
     await repo.push("origin", refspec, isFirst);
     const msg = isFirst
-      ? `Push inițial efectuat și upstream setat pe ${branch}.`
-      : `Push efectuat cu succes pe ${branch}.`;
+      ? `Initial push to ${remoteBranch} successful.`
+      : `Push to ${remoteBranch} successful.`;
     vscode.window.showInformationMessage(msg);
     this.panel.webview.postMessage({ action: "push-done" });
   } catch (err) {
-    // dacă eroarea e generată de Git CLI, surviev prin Git Output
     const detail = err instanceof Error ? err.message : String(err);
-    vscode.window.showErrorMessage(`Eroare la push: ${detail}`);
+    vscode.window.showErrorMessage(`Error pushing to remote: ${detail}`);
   }
 }
 
 
 private async pullRepository(): Promise<void> {
-  /* 0. Git API */
   const gitExt = vscode.extensions.getExtension("vscode.git")?.exports;
   const git    = gitExt?.getAPI(1);
   if (!git) {
-    vscode.window.showErrorMessage("Extensia Git nu este disponibilă.");
+    vscode.window.showErrorMessage("Git extension is not available.");
     return;
   }
 
-  /* 1. Căile repo-ului */
   const submissionsPath = SubmissionFile.getSubmissionsFolderPath();
   const baseName        = `${this.problem.id}_${this.problem.name.trim().replaceAll(" ", "_")}`;
   const repoDir         = `${baseName}_repo`;
   const repoUri         = vscode.Uri.file(path.join(submissionsPath, repoDir));
 
-  /* 2. Deschide / obține repo-ul */
   let repo = git.getRepository(repoUri)
-           ?? await git.openRepository?.(repoUri).catch(() => undefined);
+          ?? await git.openRepository?.(repoUri).catch(() => undefined);
   if (!repo) {
     await vscode.commands.executeCommand("git.openRepository", repoUri);
     repo = git.getRepository(repoUri);
   }
   if (!repo) {
-    vscode.window.showErrorMessage("Repository-ul Git nu a putut fi deschis.");
+    vscode.window.showErrorMessage("Git repository could not be opened.");
     return;
   }
 
-  /* 3. Fetch + status */
   await repo.fetch("origin").catch(() => {});
   await repo.status();
 
-  /* 4. Alege versiunea (QuickPick) */
   const items: vscode.QuickPickItem[] = [];
   const log = await repo.log({ maxEntries: 20 });
   for (const c of log) {
@@ -357,43 +332,37 @@ private async pullRepository(): Promise<void> {
     items.push({ label: `$(tag) ${ref.name}`, description: "Tag", detail: ref.commit });
   }
   const choice = await vscode.window.showQuickPick(items, {
-    placeHolder: "Alege commit/branch/tag pentru pull"
+    placeHolder: "Pick a commit or branch to pull",
   });
   if (!choice) { return; }
 
   const ref = choice.label.split(" ")[1];
   if (!ref) {
-    vscode.window.showErrorMessage("Nu am determinat referința aleasă.");
+    vscode.window.showErrorMessage("No valid reference selected for pull.");
     return;
   }
 
-  /* 5. Checkout */
   try {
     await repo.checkout(ref);
   } catch (err) {
-    vscode.window.showErrorMessage(`Eroare la checkout: ${(err as Error).message}`);
+    vscode.window.showErrorMessage(`Error at checkout: ${(err as Error).message}`);
     return;
   }
 
-  /* 6. Copiază fișierul înapoi unde era inițial */
   const srcFile  = vscode.Uri.joinPath(repoUri, path.basename(this.submissionFile.Uri.fsPath));
-  const destFile = this.submissionFile.Uri;  // exact locația originală
+  const destFile = this.submissionFile.Uri;
   try {
     await vscode.workspace.fs.copy(srcFile, destFile, { overwrite: true });
   } catch (err) {
     vscode.window.showWarningMessage(
-      `Pull OK, dar nu am putut copia fișierul: ${(err as Error).message}`
+      `Could not copy file from repository: ${(err as Error).message}`
     );
     return;
   }
 
-  /* 7. Feedback + reaplică split-ul */
-  // 7.1 notifici pull-ul terminat
   this.panel.webview.postMessage({ action: "pull-done" });
-  // 7.2 trimiți “code” exact ca un click pe butonul Code
-  this.panel.webview.postMessage({ action: "code" });
 
-  vscode.window.showInformationMessage(`Pulled ${ref} și fișierul a fost restaurat.`);
+  vscode.window.showInformationMessage(`Pulled ${ref} and updated local file.`);
 }
 
   async waitForSubmitionProcessing(

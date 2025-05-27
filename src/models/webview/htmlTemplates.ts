@@ -1025,32 +1025,44 @@ export const getProblemHTML = (
       <button
         id="create-repo"
         class="btn create-repo"
-        ${repoUriExists ? `disabled` : `onclick="send('create-repo')"`}
-        title="${repoUriExists ? "Repository already created" : "Create a new repository"}">
+        onclick="send('create-repo')"
+        ${repoUriExists ? "disabled" : ""}
+        title="${repoUriExists
+          ? "Repository already created"
+          : "Create a new repository"}">
         🐙 Create repo
       </button>
 
       <button
         id="commit-repo"
         class="btn commit-repo"
-        ${!repoUriExists ? "disabled" : `onclick="send('commit')"`}
-        title="${repoUriExists ? "Commit changes to the repository" : "Create a repository first"}">
+        onclick="send('commit')"
+        ${!repoUriExists ? "disabled" : ""}
+        title="${repoUriExists
+          ? "Commit changes to the repository"
+          : "Create a repository first"}">
         💾 Commit
       </button>
 
       <button
         id="push-repo"
         class="btn push-repo"
-        ${!repoUriExists ? "disabled" : `onclick="send('push')"`}
-        title="${repoUriExists ? "Push changes to the repository" : "Create a repository first"}">
+        onclick="send('push')"
+        ${!repoUriExists ? "disabled" : ""}
+        title="${repoUriExists
+          ? "Push changes to the repository"
+          : "Create a repository first"}">
         ⬆️ Push
       </button>
 
       <button
         id="pull-repo"
         class="btn pull-repo"
-        ${!repoUriExists ? "disabled" : `onclick="send('pull')"`}
-        title="${repoUriExists ? "Pull changes from the repository" : "Create a repository first"}">
+        onclick="send('pull')"
+        ${!repoUriExists ? "disabled" : ""}
+        title="${repoUriExists
+          ? "Pull changes from the repository"
+          : "Create a repository first"}">
         ⬇️ Pull
       </button>
     </div>
@@ -1132,6 +1144,10 @@ export const getProblemHTML = (
             pullBtn.disabled = false;
             pullBtn.title = "Pull changes from the repository";
           }
+        }
+
+        if (event.data.action === "pull-done") {
+          send("code");
         }
       });
 
