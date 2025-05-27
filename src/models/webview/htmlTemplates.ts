@@ -280,7 +280,7 @@ const problemButtonsStyle = `
   transform: translateY(4px); 
 }
 
-.create-repo, .commit, .push, .pull {
+.create-repo, .commit-repo, .push-repo, .pull-repo {
   color: black;
   background-color: #f4f4f5;
   margin-top: 20px;
@@ -294,17 +294,17 @@ const problemButtonsStyle = `
   transition: background 0.1s, color 0.1s, opacity 0.1s;
 }
 
-.create-repo:hover, .commit:hover, .push:hover, .pull:hover {
+.create-repo:hover, .commit-repo:hover, .push-repo:hover, .pull-repo:hover {
   background-color: #8c30f5;
   color: white;
 }
 
-.create-repo:active, .commit:active, .push:active, .pull:active {
+.create-repo:active, .commit-repo:active, .push-repo:active, .pull-repo:active {
   transform: translateY(4px);
   opacity: 0.85;
 }
 
-.create-repo[disabled] {
+.create-repo[disabled], .commit-repo[disabled], .push-repo[disabled], .pull-repo[disabled] {
   background-color: #e0e0e0;
   color: #888;
   cursor: default;
@@ -1025,16 +1025,34 @@ export const getProblemHTML = (
       <button
         id="create-repo"
         class="btn create-repo"
-        ${repoUriExists
-            ? `disabled`
-            : `onclick="send('create-repo')"` }
+        ${repoUriExists ? `disabled` : `onclick="send('create-repo')"`}
         title="${repoUriExists ? "Repository already created" : "Create a new repository"}">
         🐙 Create repo
       </button>
 
-      <button id="commit" class="btn commit" onclick="send('commit')">💾 Commit</button>
-      <button id="push" class="btn push" onclick="send('push')">⬆️ Push</button>
-      <button id="pull" class="btn pull" onclick="send('pull')">⬇️ Pull</button>
+      <button
+        id="commit-repo"
+        class="btn commit-repo"
+        ${!repoUriExists ? "disabled" : `onclick="send('commit')"`}
+        title="${repoUriExists ? "Commit changes to the repository" : "Create a repository first"}">
+        💾 Commit
+      </button>
+
+      <button
+        id="push-repo"
+        class="btn push-repo"
+        ${!repoUriExists ? "disabled" : `onclick="send('push')"`}
+        title="${repoUriExists ? "Push changes to the repository" : "Create a repository first"}">
+        ⬆️ Push
+      </button>
+
+      <button
+        id="pull-repo"
+        class="btn pull-repo"
+        ${!repoUriExists ? "disabled" : `onclick="send('pull')"`}
+        title="${repoUriExists ? "Pull changes from the repository" : "Create a repository first"}">
+        ⬇️ Pull
+      </button>
     </div>
 
     <script>
@@ -1096,6 +1114,26 @@ export const getProblemHTML = (
       } else {
         console.error("Checkbox not found");  // DEBUG
       }
+
+      window.addEventListener("message", (event) => {
+        if (event.data.action === "repo-created") {
+          const createBtn = document.getElementById("create-repo");
+          const commitBtn = document.getElementById("commit-repo");
+          const pushBtn = document.getElementById("push-repo");
+          const pullBtn = document.getElementById("pull-repo");
+
+          if (createBtn) {
+            createBtn.disabled = true;
+            createBtn.title = "Repository already created";
+            commitBtn.disabled = false;
+            commitBtn.title = "Commit changes to the repository";
+            pushBtn.disabled = false;
+            pushBtn.title = "Push changes to the repository";
+            pullBtn.disabled = false;
+            pullBtn.title = "Pull changes from the repository";
+          }
+        }
+      });
 
       function send(cmd) {
         vscode.postMessage({
