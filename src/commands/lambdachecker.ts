@@ -47,7 +47,7 @@ export class LambdaChecker {
   static problemDataProvider: ProblemDataProvider;
   static users: User[] = [];
   static problems: BaseProblem[] = [];
-  static rankingsPageSize = 5;
+  static rankingsPageSize = 1000;
   static outputChannel = vscode.window.createOutputChannel(
     "LambdaChecker Output"
   );

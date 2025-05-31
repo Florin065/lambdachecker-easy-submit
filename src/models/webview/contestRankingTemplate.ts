@@ -58,7 +58,9 @@ const getRankingTableEntryHTML = (
   rank: number,
   problems: ProblemMetadataContestContext[],
   contestStart: string,
-  problemsGrades: ProblemTotalGrade[]
+  problemsGrades: ProblemTotalGrade[],
+  isTeacher: boolean,
+  currentUsername: string
 ) => {
   const orderedMaxSubmissions: (MaxSubmissionMeta | undefined)[] = [];
   const orderedProblemsGrades: (ProblemTotalGrade | undefined)[] = [];
@@ -77,7 +79,13 @@ const getRankingTableEntryHTML = (
     );
   }
 
+  let displayUsername = rankListEntry.username;
+  if (!isTeacher && rankListEntry.username !== currentUsername) {
+    displayUsername = hashUsername(rankListEntry.username);
+  }
+
   let maxSubmissionsData = "";
+  
   for (let i = 0; i < problems.length; ++i) {
     if (orderedMaxSubmissions[i] === undefined) {
       maxSubmissionsData += `<td></td>`;
@@ -109,7 +117,7 @@ const getRankingTableEntryHTML = (
   return `
   <tr>
     <td>${rank}</td>
-    <td>${rankListEntry.username}</td>
+    <td>${displayUsername}</td>
     <td>${rankListEntry.points}</td>
     ${maxSubmissionsData}
   </tr>
@@ -175,6 +183,10 @@ const getPaginationElement = (
 </div>`;
 };
 
+const hashUsername = (username: string) => {
+  return btoa(username).slice(0, 8);
+};
+
 export const getContestRankingHTML = (
   stylesUri: vscode.Uri,
   scriptsUri: vscode.Uri,
@@ -185,6 +197,11 @@ export const getContestRankingHTML = (
   totalPages: number,
   currentSlidingWindow: number[] = [1, Math.min(10, totalPages)]
 ) => {
+  const user = LambdaChecker.userDataCache.get("user") as unknown as Record<string, unknown>;
+  const isTeacher = user["role"] === "teacher";
+  console.log("Is teacher:", isTeacher);
+  const currentUsername = user["username"] as string;
+
   const rankingData = oldRankingData
     .map((entry, idx) =>
       getRankingTableEntryHTML(
@@ -192,7 +209,9 @@ export const getContestRankingHTML = (
         (currentPage - 1) * LambdaChecker.rankingsPageSize + idx + 1,
         contestMetadata.problems,
         contestMetadata.start_date,
-        problemsGrades
+        problemsGrades,
+        isTeacher,
+        currentUsername
       )
     )
     .join("");
@@ -212,6 +231,65 @@ export const getContestRankingHTML = (
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ranking ${contestMetadata.name}</title>
     <link rel='stylesheet' type='text/css' href='${stylesUri}'>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+      .search-bar-wrapper {
+        display: flex;
+        justify-content: flex-start;
+        margin: 12px 0;
+      }
+
+      #search-bar {
+        width: 220px;
+        padding: 6px 10px;
+        font-size: 13px;
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 4px;
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      #search-bar:focus {
+        outline: none;
+        border-color: var(--vscode-focusBorder);
+        box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+      }
+
+      #search-bar::placeholder {
+        color: var(--vscode-input-placeholderForeground);
+        opacity: 1;
+      }
+
+      .charts-row{
+        display:flex;
+        gap:40px;
+        flex-wrap:wrap;
+        justify-content:center;
+        align-items:center;
+        margin:18px 0 30px;
+      }
+
+      .chart-wrapper{
+        text-align:center;
+      }
+
+      .chart-caption{
+        margin-top:6px;
+        font-size:13px;
+        color:var(--vscode-editor-foreground);
+        opacity:.9;
+      }
+
+      canvas{
+        background-color:rgba(255,255,255,0.05);
+        border-radius:6px;
+        padding:6px;
+      }
+
+    </style>
   </head>
   <body>
     <h1 class="contest-name">Ranking ${contestMetadata.name}
@@ -230,14 +308,23 @@ export const getContestRankingHTML = (
     </div>
     </h1>
 
-    <div class="search-bar-wrapper">
-      <input
-        type="text"
-        id="search-bar"
-        placeholder="Search by username..."
-        oninput="filterTable()"
-      />
+    <div class="charts-row">
+      <div class="chart-wrapper">
+        <canvas id="gradePie"     width="280" height="280"></canvas>
+        <p class="chart-caption">Grades frequency distribution</p>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="avgGradeChart" width="450" height="280"></canvas>
+        <p class="chart-caption">Average grade per problem</p>
+      </div>
     </div>
+
+    ${isTeacher ? `
+      <div class="search-bar-wrapper">
+        <input type="text" id="search-bar" placeholder="Search by username..." oninput="filterRankingByUsername()" />
+      </div>
+    ` : ""}
 
     <table class="ranking-table">
         <thead>
@@ -267,33 +354,146 @@ export const getContestRankingHTML = (
 
         let allRankingData = ${JSON.stringify(oldRankingData)};
 
-        function filterTable() {
-          // const searchInput = document.getElementById("search-bar").value.toLowerCase();
-          // const tableRows = document.querySelectorAll("#ranking-data tr");
-          // filter the table rows based on the search input and render the filtered rows
-          const searchInput = document.getElementById("search-bar").value.toLowerCase();
-          const tableRows = document.querySelectorAll("#ranking-data tr");
-
-
-          // Render the table rows based on the search input, without empty rows
-          let filteredRows = "";
-          let emptyRows = 0;
-          tableRows.forEach((row) => {
-            const username = row.querySelector("td:nth-child(2)").textContent.toLowerCase();
-            if (username.includes(searchInput)) {
-              filteredRows += row.outerHTML;
-            } else {
-              emptyRows++;
-            }
+        function filterRankingByUsername() {
+          const input = document.getElementById('search-bar').value.toLowerCase();
+          const rows = document.querySelectorAll('#ranking-data tr');
+          rows.forEach(row => {
+            const username = row.children[1].textContent.toLowerCase();
+            row.style.display = username.includes(input) ? '' : 'none';
           });
-          const rankingData = document.getElementById("ranking-data");
-          rankingData.innerHTML = filteredRows;
-          if (filteredRows === "") {
-            rankingData.innerHTML = "<tr><td colspan='100%'>No results found</td></tr>";
+        }
+
+        const participantCount = ${oldRankingData.length || 1};
+        const avgData = totals.map(t => +(t / participantCount).toFixed(2));
+
+        const grades = ${JSON.stringify(oldRankingData.map(r => r.points))};
+        const maxPoints = Math.max(...grades, 1); // evită divizare la 0
+
+        const BIN_COUNT = 10;
+        const BIN_SIZE = Math.ceil(maxPoints / BIN_COUNT);
+
+        const BINS = Array(BIN_COUNT + 1).fill(0);
+        grades.forEach(g => {
+          const idx = g === 0 ? 0 : Math.min(Math.ceil(g / BIN_SIZE), BIN_COUNT);
+          BINS[idx] += 1;
+        });
+
+        const pieLabels = [];
+        for (let i = 0; i <= BIN_COUNT; i++) {
+          if (i === 0) {
+            pieLabels.push("0");
           } else {
-            rankingData.innerHTML += "<tr><td colspan='100%'></td></tr>";
+            const start = (BIN_SIZE * (i - 1)) + 1;
+            const end = Math.min(BIN_SIZE * i, maxPoints);
+            pieLabels.push(start + "-" + end);
           }
         }
+
+        const pieData = BINS;
+
+        function rgb(r, g, b) {
+          return (
+            "#" +
+            [r, g, b]
+              .map(v => v.toString(16).padStart(2, "0"))
+              .join("")
+              .toUpperCase()
+          );
+        }
+
+        function buildBluePalette(n) {
+          const base = { r: 0, g: 140, b: 255 };
+          const colors = [];
+          for (let i = 0; i < n; i++) {
+            const f = i / (n - 1) * 0.8;
+            const r = Math.round(base.r + (255 - base.r) * f);
+            const g = Math.round(base.g + (255 - base.g) * f);
+            const b = Math.round(base.b + (255 - base.b) * f);
+            colors.push(rgb(r, g, b));
+          }
+          return colors;
+        }
+
+        const pieColors = buildBluePalette(pieLabels.length);
+
+        const pieCtx = document.getElementById("gradePie").getContext("2d");
+        new Chart(pieCtx, {
+          type: "doughnut",
+          data: {
+            labels: pieLabels,
+            datasets: [{
+              data: pieData,
+              backgroundColor: pieColors,
+              borderColor:  "rgba(255,255,255,0.9)",
+              borderWidth: 1
+            }]
+          },
+          options: {
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx =>
+                    ctx.label + ": " +
+                    ctx.parsed + " user" + (ctx.parsed === 1 ? "" : "s")
+                }
+              }
+            },
+            cutout: "35%"
+          }
+        });
+
+        const labels = ${JSON.stringify(
+          contestMetadata.problems.map((_, i) =>
+            String.fromCharCode("A".charCodeAt(0) + i)
+          )
+        )};
+
+        const totals = ${JSON.stringify(
+          contestMetadata.problems.map(p => {
+            const g = problemsGrades.find(x => x.id === p.id);
+            return g ? g.total : 0;
+          })
+        )};
+
+        const barCtx = document.getElementById("avgGradeChart").getContext("2d");
+        new Chart(barCtx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [{
+              data: avgData,
+              backgroundColor: "rgba(0,140,255,0.6)",
+              borderColor:   "rgba(0,140,255,1)",
+              borderWidth: 1
+            }]
+          },
+          options: {
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  title: ctx => \`Problem ${'${'}ctx[0].label}\`,
+                  label: ctx => \`Avg: ${'${'}ctx.parsed.y}\`
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display:false }
+              },
+              y: {
+                beginAtZero:true,
+                ticks:{ precision:0 },
+                grid:{
+                  color: "rgba(255,255,255,0.25)",
+                  borderDash: [4,4]
+                }
+              }
+            }
+          }
+        });
+
       </script>
       <script src="${scriptsUri}"></script>
     </body>
