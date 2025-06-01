@@ -199,7 +199,6 @@ export const getContestRankingHTML = (
 ) => {
   const user = LambdaChecker.userDataCache.get("user") as unknown as Record<string, unknown>;
   const isTeacher = user["role"] === "teacher";
-  console.log("Is teacher:", isTeacher);
   const currentUsername = user["username"] as string;
 
   const rankingData = oldRankingData
@@ -322,7 +321,7 @@ export const getContestRankingHTML = (
 
     ${isTeacher ? `
       <div class="search-bar-wrapper">
-        <input type="text" id="search-bar" placeholder="Search by username..." oninput="filterRankingByUsername()" />
+        <input type="text" id="search-bar" placeholder="Search by username" oninput="filterRankingByUsername()" />
       </div>
     ` : ""}
 
@@ -352,8 +351,6 @@ export const getContestRankingHTML = (
         }];
         let totalPages = ${totalPages};
 
-        let allRankingData = ${JSON.stringify(oldRankingData)};
-
         function filterRankingByUsername() {
           const input = document.getElementById('search-bar').value.toLowerCase();
           const rows = document.querySelectorAll('#ranking-data tr');
@@ -363,8 +360,11 @@ export const getContestRankingHTML = (
           });
         }
 
-        const participantCount = ${oldRankingData.length || 1};
-        const avgData = totals.map(t => +(t / participantCount).toFixed(2));
+        const labels = ${JSON.stringify(
+          contestMetadata.problems.map((_, i) =>
+            String.fromCharCode("A".charCodeAt(0) + i)
+          )
+        )};
 
         const grades = ${JSON.stringify(oldRankingData.map(r => r.points))};
         const maxPoints = Math.max(...grades, 1); // evită divizare la 0
@@ -443,26 +443,38 @@ export const getContestRankingHTML = (
           }
         });
 
-        const labels = ${JSON.stringify(
-          contestMetadata.problems.map((_, i) =>
-            String.fromCharCode("A".charCodeAt(0) + i)
-          )
-        )};
+        const probCount     = ${contestMetadata.problems.length};
+        const sumPerProblem = Array(probCount).fill(0);
+        const cntPerProblem = Array(probCount).fill(0);
+        let allRankingData = ${JSON.stringify(oldRankingData)};
 
-        const totals = ${JSON.stringify(
-          contestMetadata.problems.map(p => {
-            const g = problemsGrades.find(x => x.id === p.id);
-            return g ? g.total : 0;
-          })
-        )};
+        allRankingData.forEach(entry => {
+          ${contestMetadata.problems.map((p, idx) => `
+            {
+              const meta = entry.max_submissions.find(m => m.problem_id === ${p.id});
+              if (meta) {
+                sumPerProblem[${idx}] += meta.grade;
+                cntPerProblem [${idx}] += 1;
+              }
+            }`).join("")}
+        });
+
+        const avgAbs = sumPerProblem.map((s, i) =>
+                      cntPerProblem[i] ? +(s / cntPerProblem[i]).toFixed(2) : 0);
+
+        const maxPts = ${JSON.stringify(problemsGrades.map(g => g.total))};
+        const avgPct = avgAbs.map((a, i) =>
+                      maxPts[i] ? +(a * 100 / maxPts[i]).toFixed(1) : 0);
+
+        const barLabels = labels;
 
         const barCtx = document.getElementById("avgGradeChart").getContext("2d");
         new Chart(barCtx, {
           type: "bar",
           data: {
-            labels,
+            labels: barLabels,
             datasets: [{
-              data: avgData,
+              data: avgPct,                                    // 0-100 %
               backgroundColor: "rgba(0,140,255,0.6)",
               borderColor:   "rgba(0,140,255,1)",
               borderWidth: 1
@@ -473,22 +485,22 @@ export const getContestRankingHTML = (
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  title: ctx => \`Problem ${'${'}ctx[0].label}\`,
-                  label: ctx => \`Avg: ${'${'}ctx.parsed.y}\`
+                  title: ctx => "Problem " + ctx[0].label,
+                  label: ctx => {
+                    const i = ctx.dataIndex;
+                    return 'Avg: ' + avgAbs[i] + ' / ' + maxPts[i] +
+                          '  ('  + avgPct[i] + ' %)';
+                  }
                 }
               }
             },
             scales: {
-              x: {
-                grid: { display:false }
-              },
+              x: { grid: { display: false } },
               y: {
-                beginAtZero:true,
-                ticks:{ precision:0 },
-                grid:{
-                  color: "rgba(255,255,255,0.25)",
-                  borderDash: [4,4]
-                }
+                beginAtZero: true,
+                max: 100,
+                ticks: { callback: v => v + "%" },
+                grid: { color:"rgba(255,255,255,0.25)", borderDash:[4,4] }
               }
             }
           }
